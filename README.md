@@ -7,5 +7,5 @@ The homework of Stanford-CS231n
 
 #### Assignment1
 
-- 2021.11完成
-- 由于dataset大小限制并未给出
+- 于 2021.11 完成
+- 由于dataset大小限制并未在GitHub中给出
