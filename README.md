@@ -5,4 +5,7 @@ The homework of Stanford-CS231n
 
 本作业由我在本地环境中 (Mac M1) 完成
 
+#### Assignment1
 
+- 2021.11完成
+- 由于dataset大小限制并未给出
