@@ -1,0 +1,9 @@
+_site/
+.sass-cache/
+__pycache__/
+_pdf
+.DS_Store
+.idea
+vendor/
+.bundle/
+cifar-10-batches-py/
