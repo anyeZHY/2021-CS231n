@@ -79,15 +79,15 @@ class FullyConnectedNet(object):
         # i=0,1,2,...,L-1
         for i in range(self.num_layers):
             tail = str(i+1)
-            params['W'+tail] = weight_scale * np.random.randn(hid_dims[i], hid_dims[i+1]).astype(self.dtype)
-            params['b'+tail] = np.zeros(hid_dims[i+1]).astype(self.dtype)
+            self.params['W'+tail] = weight_scale * np.random.randn(hid_dims[i], hid_dims[i+1]).astype(self.dtype)
+            self.params['b'+tail] = np.zeros(hid_dims[i+1]).astype(self.dtype)
 
-        if self.normalization == "batchnorm":
+        if self.normalization == "batchnorm" or self.normalization == "layernorm":
             # i=0,1,...,L-2
             for i in range(self.num_layers-1):
-            tail = str(i+1)
-            params['gamma'+tail] = np.ones(hid_dims[i+1]).astype(self.dtype)
-            params['beta'+tail] = np.zeros(hid_dims[i+1]).astype(self.dtype)
+                tail = str(i+1)
+                self.params['gamma'+tail] = np.ones(hid_dims[i+1]).astype(self.dtype)
+                self.params['beta'+tail] = np.zeros(hid_dims[i+1]).astype(self.dtype)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -160,7 +160,31 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out_dic = {}
+        cache_dic = {}
+        out = X
+        for i in range(self.num_layers-1):
+            tail = str(i+1)
+            out, cache = affine_forward(out, self.params['W'+tail], self.params['b'+tail])
+            cache_dic['affine'+tail] = cache
+            if self.normalization == 'batchnorm':
+                out, cache = batchnorm_forward(out, self.params['gamma'+tail], self.params['beta'+tail], self.bn_params[i])
+                cache_dic['norm'+tail] = cache
+            if self.normalization == 'layernorm':
+                out, cache = layernorm_forward(out, self.params['gamma'+tail], self.params['beta'+tail], self.bn_params[i])
+                cache_dic['norm'+tail] = cache
+            out, cache = relu_forward(out)
+            cache_dic['relu'+tail] = cache
+            if self.use_dropout:
+                out, cache = dropout_forward(out, self.dropout_param)
+                cache_dic['dropout'+tail] = cache
+        
+        tail = str(self.num_layers)
+        out, cache = affine_forward(out, self.params['W'+tail], self.params['b'+tail])
+        cache_dic['affine'+tail] = cache
+        exp = np.exp(out)
+        scores = exp/np.sum(exp)
+        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -187,7 +211,32 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        L = self.num_layers
+        loss, dout = softmax_loss(out, y)
+        # i = 0, 1, 2, ..., L-1
+        tail = str(L)
+        dout, dw, db = affine_backward(dout, cache_dic['affine'+tail])
+        grads['W'+tail] = dw + self.reg * self.params['W'+tail]
+        grads['b'+tail] = db
+        loss += 0.5 * self.reg * np.sum((self.params['W'+tail])**2)
+        for i in range(L-1):
+            tail = str(L-i-1)
+            if self.use_dropout:
+                dout = dropout_backward(dout, cache_dic['dropout'+tail])
+            dout = relu_backward(dout, cache_dic['relu'+tail])
+            if self.normalization == 'batchnorm':
+                dout, dgamma, dbeta = batchnorm_backward(dout, cache_dic['norm'+tail])
+                grads['gamma'+tail] = dgamma
+                grads['beta'+tail] = dbeta
+            if self.normalization == 'layernorm':
+                dout, dgamma, dbeta = layernorm_backward(dout, cache_dic['norm'+tail])
+                grads['gamma'+tail] = dgamma
+                grads['beta'+tail] = dbeta
+            dout, dw, db = affine_backward(dout, cache_dic['affine'+tail])
+            grads['W'+tail] = dw + self.reg * self.params['W'+tail]
+            grads['b'+tail] = db
+            loss += 0.5 * self.reg * np.sum((self.params['W'+tail])**2)
+        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

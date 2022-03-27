@@ -7,3 +7,4 @@ _pdf
 vendor/
 .bundle/
 cifar-10-batches-py/
+.zip
