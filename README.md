@@ -19,5 +19,4 @@
 
 #### 结语
 
-
-<center>“But research into CNN architectures is still flourishing.” </center>
+- “But research into CNN architectures is still flourishing.”
